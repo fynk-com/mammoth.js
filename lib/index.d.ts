@@ -46,13 +46,6 @@ interface Image {
     readAsBase64String: () => Promise<string>;
     readAsBuffer: () => Promise<Buffer>;
     read: ImageRead;
-    width?: number;
-    height?: number;
-    naturalWidth?: number;
-    naturalHeight?: number;
-    isCropped?: boolean;
-    altText?: string;
-    imageProperties?: any;
 }
 
 interface ImageRead {
@@ -66,7 +59,6 @@ interface ImageAttributes {
 
 interface Images {
     dataUri: ImageConverter;
-    dataUriWithDimensions: ImageConverter;
     imgElement: (f: (image: Image) => Promise<ImageAttributes>) => ImageConverter;
 }
 
