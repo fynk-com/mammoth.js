@@ -1755,6 +1755,55 @@ test("can read anchored pictures", function() {
     }))));
 });
 
+test("anchored pictures have size in pixels, floating, wrapping style and cropping", function() {
+    var drawing = new XmlElement("w:drawing", {}, [
+        new XmlElement("wp:anchor", {}, [
+            new XmlElement("wp:extent", {cx: "1905000", cy: "952500"}),
+            new XmlElement("wp:wrapSquare", {wrapText: "bothSides"}),
+            new XmlElement("wp:docPr", {}),
+            new XmlElement("a:graphic", {}, [
+                new XmlElement("a:graphicData", {}, [
+                    new XmlElement("pic:pic", {}, [
+                        new XmlElement("pic:blipFill", {}, [
+                            new XmlElement("a:blip", {"r:embed": IMAGE_RELATIONSHIP_ID}),
+                            new XmlElement("a:srcRect", {l: "0", t: "1200"})
+                        ])
+                    ])
+                ])
+            ])
+        ])
+    ]);
+
+    var image = readEmbeddedImage(drawing).value[0];
+
+    assert.equal(image.width, 200);
+    assert.equal(image.height, 100);
+    assert.deepEqual(image.imageProperties, {floating: "floating", wrappingStyle: "wrapSquare"});
+    assert.equal(image.isCropped, true);
+});
+
+test("inline pictures are not floating and not cropped without a:srcRect", function() {
+    var drawing = createInlineImage({blip: createEmbeddedBlip(IMAGE_RELATIONSHIP_ID)});
+
+    var image = readEmbeddedImage(drawing).value[0];
+
+    assert.equal(image.width, null);
+    assert.deepEqual(image.imageProperties, {floating: "inline", wrappingStyle: null});
+    assert.equal(image.isCropped, false);
+});
+
+test("v:shape image data has size in pixels from the shape style", function() {
+    var shape = new XmlElement("v:shape", {style: "position:absolute;width:72pt;height:2cm"}, [
+        new XmlElement("v:imagedata", {"r:id": IMAGE_RELATIONSHIP_ID})
+    ]);
+
+    var image = readEmbeddedImage(shape).value;
+
+    assert.equal(image.width, 96);
+    assert.equal(Math.round(image.height), 76);
+    assert.equal(image.imageProperties, null);
+});
+
 test("can read linked pictures", function() {
     var drawing = createInlineImage({
         blip: createLinkedBlip("rId5"),
