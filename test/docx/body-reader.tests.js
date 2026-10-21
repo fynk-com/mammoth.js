@@ -148,6 +148,16 @@ test("paragraph indent", {
         assert.equal(paragraph.indent.end, null);
         assert.equal(paragraph.indent.firstLine, null);
         assert.equal(paragraph.indent.hanging, null);
+    },
+
+    "left and right indents are read from w:left and w:right only": function() {
+        var paragraphXml = paragraphWithIndent({"w:left": "720", "w:right": "360", "w:start": "100", "w:end": "50"});
+        var paragraph = readXmlElementValue(paragraphXml);
+        assert.equal(paragraph.indent.left, "720");
+        assert.equal(paragraph.indent.right, "360");
+
+        var paragraphWithoutLeftXml = paragraphWithIndent({"w:start": "100"});
+        assert.equal(readXmlElementValue(paragraphWithoutLeftXml).indent.left, null);
     }
 });
 
@@ -156,6 +166,20 @@ function paragraphWithIndent(indentAttributes) {
     var propertiesXml = new XmlElement("w:pPr", {}, [indentXml]);
     return new XmlElement("w:p", {}, [propertiesXml]);
 }
+
+test("paragraph spacing", {
+    "is read from w:spacing": function() {
+        var spacingXml = new XmlElement("w:spacing", {"w:before": "120", "w:after": "240", "w:line": "360", "w:lineRule": "auto"});
+        var paragraphXml = new XmlElement("w:p", {}, [new XmlElement("w:pPr", {}, [spacingXml])]);
+        var paragraph = readXmlElementValue(paragraphXml);
+        assert.deepEqual(paragraph.spacing, {before: "120", after: "240", line: "360", lineRule: "auto"});
+    },
+
+    "is null when w:spacing is missing": function() {
+        var paragraph = readXmlElementValue(new XmlElement("w:p", {}, []));
+        assert.deepEqual(paragraph.spacing, {before: null, after: null, line: null, lineRule: null});
+    }
+});
 
 test("paragraph has numbering properties from paragraph properties if present", function() {
     var numberingPropertiesXml = new XmlElement("w:numPr", {}, [
