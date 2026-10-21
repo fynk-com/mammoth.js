@@ -1324,6 +1324,70 @@ test("w:gridSpan is read as colSpan for table cell", function() {
     ]));
 });
 
+test("table cell has width from w:tcW scaled by 1/12 and background color from w:shd", function() {
+    var tableXml = new XmlElement("w:tbl", {}, [
+        new XmlElement("w:tr", {}, [
+            new XmlElement("w:tc", {}, [
+                new XmlElement("w:tcPr", {}, [
+                    new XmlElement("w:tcW", {"w:w": "2400", "w:type": "dxa"}),
+                    new XmlElement("w:shd", {"w:val": "clear", "w:fill": "FFCC00"})
+                ]),
+                new XmlElement("w:p", {}, [])
+            ])
+        ])
+    ]);
+    var cell = readXmlElementValue(tableXml).children[0].children[0];
+    assert.equal(cell.width, 200);
+    assert.equal(cell.bgColor, "FFCC00");
+});
+
+test("table isBordered", {
+    "is false without borders": function() {
+        var tableXml = new XmlElement("w:tbl", {}, [row(emptyCell())]);
+        assert.equal(readXmlElementValue(tableXml).isBordered, false);
+    },
+
+    "is true when an outer table border is visible": function() {
+        var tableXml = new XmlElement("w:tbl", {}, [
+            new XmlElement("w:tblPr", {}, [
+                new XmlElement("w:tblBorders", {}, [
+                    new XmlElement("w:top", {"w:val": "nil"}),
+                    new XmlElement("w:left", {"w:val": "single"})
+                ])
+            ]),
+            row(emptyCell())
+        ]);
+        assert.equal(readXmlElementValue(tableXml).isBordered, true);
+    },
+
+    "ignores inside table borders": function() {
+        var tableXml = new XmlElement("w:tbl", {}, [
+            new XmlElement("w:tblPr", {}, [
+                new XmlElement("w:tblBorders", {}, [
+                    new XmlElement("w:insideH", {"w:val": "single"})
+                ])
+            ]),
+            row(emptyCell())
+        ]);
+        assert.equal(readXmlElementValue(tableXml).isBordered, false);
+    },
+
+    "is true when a cell border is visible": function() {
+        var tableXml = new XmlElement("w:tbl", {}, [
+            row(new XmlElement("w:tc", {}, [
+                new XmlElement("w:tcPr", {}, [
+                    new XmlElement("w:tcBorders", {}, [
+                        new XmlElement("w:bottom", {"w:val": "single"})
+                    ])
+                ])
+            ]))
+        ]);
+        var table = readXmlElementValue(tableXml);
+        assert.equal(table.isBordered, true);
+        assert.equal(table.children[0].children[0]._hasBorders, undefined);
+    }
+});
+
 test("w:vMerge is read as rowSpan for table cell", function() {
     var tableXml = new XmlElement("w:tbl", {}, [
         row(emptyCell()),
