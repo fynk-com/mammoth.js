@@ -1789,8 +1789,44 @@ test("children of w:customXml are converted normally", function() {
     assertChildrenAreConvertedNormally("w:customXml");
 });
 
-test("children of w:ins are converted normally", function() {
-    assertChildrenAreConvertedNormally("w:ins");
+test("tracked changes", {
+    "w:ins is read as a run holding an ins element with the revision attributes": function() {
+        var insXml = new XmlElement("w:ins", {"w:id": "1", "w:author": "Alice", "w:date": "2025-01-02T03:04:05Z"}, [
+            new XmlElement("w:r", {}, [new XmlElement("w:t", {}, [xml.text("Hello")])])
+        ]);
+        var result = readXmlElementValue(insXml);
+        assert.deepEqual(result, new documents.Run([
+            new documents.Ins([
+                new documents.Run([new documents.Text("Hello")])
+            ], {authorName: "Alice", date: "2025-01-02T03:04:05Z", changeId: "1"})
+        ]));
+    },
+
+    "w:del is read as a run holding a del element with its deleted text": function() {
+        var delXml = new XmlElement("w:del", {"w:id": "2", "w:author": "Bob"}, [
+            new XmlElement("w:r", {}, [new XmlElement("w:delText", {}, [xml.text("Gone")])])
+        ]);
+        var result = readXmlElementValue(delXml);
+        assert.deepEqual(result, new documents.Run([
+            new documents.Del([
+                new documents.Run([new documents.Text("Gone")])
+            ], {authorName: "Bob", date: undefined, changeId: "2"})
+        ]));
+    },
+
+    "missing revision attributes are read from w:rPrChange of the first run": function() {
+        var insXml = new XmlElement("w:ins", {"w:id": "3"}, [
+            new XmlElement("w:r", {}, [
+                new XmlElement("w:rPr", {}, [
+                    new XmlElement("w:rPrChange", {"w:id": "9", "w:author": "Carol", "w:date": "2025-02-03T00:00:00Z"})
+                ])
+            ])
+        ]);
+        var ins = readXmlElementValue(insXml).children[0];
+        assert.equal(ins.changeId, "3");
+        assert.equal(ins.authorName, "Carol");
+        assert.equal(ins.date, "2025-02-03T00:00:00Z");
+    }
 });
 
 test("children of w:moveFromRangeEnd are converted normally", function() {

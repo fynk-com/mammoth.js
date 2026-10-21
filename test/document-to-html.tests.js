@@ -31,6 +31,20 @@ test('should convert document containing one paragraph to single p element', fun
     });
 });
 
+test('inserted content is kept and deleted content is dropped', function() {
+    var document = new documents.Document([
+        new documents.Paragraph([
+            runOfText("Kept "),
+            new documents.Run([new documents.Ins([runOfText("inserted")])]),
+            new documents.Run([new documents.Del([runOfText("deleted")])])
+        ])
+    ]);
+    var converter = new DocumentConverter();
+    return converter.convertToHtml(document).then(function(result) {
+        assert.equal(result.value, "<p>Kept inserted</p>");
+    });
+});
+
 test('ignores empty paragraphs', function() {
     var document = new documents.Document([
         paragraphOfText("")
