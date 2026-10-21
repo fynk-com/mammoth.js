@@ -170,7 +170,7 @@ test("paragraph has numbering properties from paragraph properties if present", 
     });
 
     var paragraph = readXmlElementValue(paragraphXml, {numbering: numbering});
-    assert.deepEqual(paragraph.numbering, {level: "1", isOrdered: true});
+    assert.deepEqual(paragraph.numbering, {level: "1", isOrdered: true, numId: "42"});
 });
 
 test("paragraph has numbering from paragraph style if present", function() {
@@ -206,7 +206,7 @@ test("numbering properties in paragraph properties takes precedence over numberi
     var styles = new Styles({"List": {name: "List"}}, {});
 
     var paragraph = readXmlElementValue(paragraphXml, {numbering: numbering, styles: styles});
-    assert.deepEqual(paragraph.numbering, {level: "1", isOrdered: true});
+    assert.deepEqual(paragraph.numbering, {level: "1", isOrdered: true, numId: "42"});
 });
 
 test("numbering properties are converted to numbering at specified level", function() {
@@ -220,7 +220,7 @@ test("numbering properties are converted to numbering at specified level", funct
     });
 
     var numberingLevel = _readNumberingProperties(null, numberingPropertiesXml, numbering);
-    assert.deepEqual(numberingLevel, {level: "1", isOrdered: true});
+    assert.deepEqual(numberingLevel, {level: "1", isOrdered: true, numId: "42"});
 });
 
 test("when numbering properties are missing w:ilvl then level of 0 is assumed", function() {
@@ -233,7 +233,7 @@ test("when numbering properties are missing w:ilvl then level of 0 is assumed", 
     });
 
     var numberingLevel = _readNumberingProperties(null, numberingPropertiesXml, numbering);
-    assert.deepEqual(numberingLevel, {level: "0", isOrdered: true});
+    assert.deepEqual(numberingLevel, {level: "0", isOrdered: true, numId: "42"});
 });
 
 test("numbering properties are ignored if w:numId is missing", function() {

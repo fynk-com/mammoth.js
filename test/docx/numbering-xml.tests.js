@@ -33,6 +33,32 @@ test('w:num element inherits levels from w:abstractNum', function() {
 });
 
 
+test('levels have the format and level text of w:lvl', function() {
+    var numbering = readNumberingXml(
+        new XmlElement("w:numbering", {}, [
+            new XmlElement("w:abstractNum", {"w:abstractNumId": "42"}, [
+                new XmlElement("w:lvl", {"w:ilvl": "0"}, [
+                    new XmlElement("w:numFmt", {"w:val": "lowerLetter"}),
+                    new XmlElement("w:lvlText", {"w:val": "%1)"})
+                ])
+            ]),
+            new XmlElement("w:num", {"w:numId": "47"}, [
+                new XmlElement("w:abstractNumId", {"w:val": "42"})
+            ])
+        ]),
+        {styles: stylesReader.defaultStyles}
+    );
+    duck.assertThat(numbering.findLevel("47", "0"), duck.hasProperties({
+        format: "lowerLetter",
+        delimiter: "%1)"
+    }));
+    duck.assertThat(numbering.getNumberingStyles()["42"].levels["0"], duck.hasProperties({
+        format: "lowerLetter",
+        delimiter: "%1)"
+    }));
+});
+
+
 test('w:num element referencing non-existent w:abstractNumId is ignored', function() {
     var numbering = readNumberingXml(
         new XmlElement("w:numbering", {}, [
