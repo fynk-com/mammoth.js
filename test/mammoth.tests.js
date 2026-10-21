@@ -5,6 +5,7 @@ var _ = require("underscore");
 var mammoth = require("../");
 var fs = require("../lib/fs");
 var results = require("../lib/results");
+var convertElementToRawText = require("../lib/raw-text").convertElementToRawText;
 
 var testing = require("./testing");
 var test = require("./test")(module);
@@ -339,6 +340,25 @@ test('simple list is converted to list elements', function() {
     var docxPath = path.join(__dirname, "test-data/simple-list.docx");
     return mammoth.convertToHtml({path: docxPath}).then(function(result) {
         assert.equal(result.value, '<ul><li>Apple</li><li>Banana</li></ul>');
+    });
+});
+
+test('headers and footers are read into the document but not converted to html', function() {
+    var docxPath = path.join(__dirname, "test-data/headers-footers.docx");
+    var document;
+    var options = {
+        transformDocument: function(element) {
+            document = element;
+            return element;
+        }
+    };
+    return mammoth.convertToHtml({path: docxPath}, options).then(function(result) {
+        assert.equal(document.headers.length, 1);
+        assert.equal(document.headers[0].type, "header");
+        assert.equal(convertElementToRawText(document.headers[0]), "Test Header Content\n\n");
+        assert.equal(document.footers.length, 1);
+        assert.equal(convertElementToRawText(document.footers[0]), "Test Footer Content\n\n");
+        assert.equal(result.value.indexOf("Test Header Content"), -1);
     });
 });
 
