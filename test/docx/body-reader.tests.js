@@ -1156,6 +1156,17 @@ test("run with invalid w:sz has null font size", function() {
     assert.deepEqual(run.fontSize, null);
 });
 
+test("run has no color by default", function() {
+    var run = readXmlElementValue(runWithProperties([]));
+    assert.deepEqual(run.color, null);
+});
+
+test("run has color read from properties", function() {
+    var colorXml = new XmlElement("w:color", {"w:val": "FF0000"});
+    var run = readXmlElementValue(runWithProperties([colorXml]));
+    assert.deepEqual(run.color, "FF0000");
+});
+
 test("run has no highlight by default", function() {
     var runXml = runWithProperties([]);
 
