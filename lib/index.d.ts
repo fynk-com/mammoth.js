@@ -66,6 +66,8 @@ interface Images {
 interface Result {
     value: string;
     messages: Array<Message>;
+    customStyles?: {[styleId: string]: {name: string | null, type: string, properties: {[key: string]: any}}};
+    numberingStyles?: {[abstractNumId: string]: {levels: {[level: string]: any}, numStyleLink?: string}};
 }
 
 type Message = Warning | Error;

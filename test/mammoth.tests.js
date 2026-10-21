@@ -342,6 +342,15 @@ test('simple list is converted to list elements', function() {
     });
 });
 
+test('style and numbering definitions are returned alongside the html', function() {
+    var docxPath = path.join(__dirname, "test-data/simple-list.docx");
+    return mammoth.convertToHtml({path: docxPath}).then(function(result) {
+        assert.equal(result.value, '<ul><li>Apple</li><li>Banana</li></ul>');
+        assert.equal(result.customStyles.ListParagraph.name, "List Paragraph");
+        assert.equal(result.numberingStyles[Object.keys(result.numberingStyles)[0]].levels["0"].isOrdered, false);
+    });
+});
+
 test('word tables are converted to html tables', function() {
     var docxPath = path.join(__dirname, "test-data/tables.docx");
     return mammoth.convertToHtml({path: docxPath}).then(function(result) {
