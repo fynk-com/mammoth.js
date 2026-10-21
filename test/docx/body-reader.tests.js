@@ -1990,6 +1990,14 @@ test("w:commentReference has ID read", function() {
     assert.deepEqual(result.messages, []);
 });
 
+test("w:commentRangeStart and w:commentRangeEnd have ID read", function() {
+    var startResult = readXmlElement(new XmlElement("w:commentRangeStart", {"w:id": "4"}));
+    var endResult = readXmlElement(new XmlElement("w:commentRangeEnd", {"w:id": "4"}));
+    assert.deepEqual(startResult.value, documents.commentRangeStart({commentId: "4"}));
+    assert.deepEqual(endResult.value, documents.commentRangeEnd({commentId: "4"}));
+    assert.deepEqual(startResult.messages, []);
+});
+
 test("emits warning on unrecognised element", function() {
     var unrecognisedElement = new XmlElement("w:not-an-element");
     var result = readXmlElement(unrecognisedElement);
