@@ -19,6 +19,9 @@ mammoth. HTML and Markdown output are the same as upstream's.
 | table, table cell | `isBordered`; `width` (`w:tcW` / 12), `bgColor` |
 | image | `width`, `height` in pixels, `imageProperties {floating, wrappingStyle}`, `isCropped` |
 
+`lib/index.d.ts` declares these additions together with every document element mammoth produces, in the `mammoth`
+namespace (`import type { Document, Paragraph } from "mammoth"`).
+
 ## Syncing with upstream
 
 Rebase the `fynk/*` branch onto the latest upstream release tag, one commit per addition, and set the version to
