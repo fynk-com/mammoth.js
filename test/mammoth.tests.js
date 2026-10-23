@@ -1,11 +1,11 @@
 var assert = require("assert");
 var path = require("path");
-var fs = require("fs");
 var _ = require("underscore");
 
 var mammoth = require("../");
-var promises = require("../lib/promises");
+var fs = require("../lib/fs");
 var results = require("../lib/results");
+var convertElementToRawText = require("../lib/raw-text").convertElementToRawText;
 
 var testing = require("./testing");
 var test = require("./test")(module);
@@ -23,7 +23,7 @@ test('should convert docx containing one paragraph to single p element', functio
 
 test('should convert docx represented by a Buffer', function() {
     var docxPath = path.join(__dirname, "test-data/single-paragraph.docx");
-    return promises.nfcall(fs.readFile, docxPath)
+    return fs.readFile(docxPath)
         .then(function(buffer) {
             return mammoth.convertToHtml({buffer: buffer});
         })
@@ -124,7 +124,7 @@ test('embedded style maps can be disabled', function() {
 
 test('embedded style map can be written using toBuffer() and then read', function() {
     var docxPath = path.join(__dirname, "test-data/single-paragraph.docx");
-    return promises.nfcall(fs.readFile, docxPath)
+    return fs.readFile(docxPath)
         .then(function(buffer) {
             return mammoth.embedStyleMap({buffer: buffer}, "p => h1");
         })
@@ -141,7 +141,7 @@ test('embedded style map can be written using toBuffer() and then read', functio
 
 test('embedded style map can be written using toArrayBuffer() and then read', function() {
     var docxPath = path.join(__dirname, "test-data/single-paragraph.docx");
-    return promises.nfcall(fs.readFile, docxPath)
+    return fs.readFile(docxPath)
         .then(function(buffer) {
             return mammoth.embedStyleMap({buffer: buffer}, "p => h1");
         })
@@ -158,7 +158,7 @@ test('embedded style map can be written using toArrayBuffer() and then read', fu
 
 test('embedded style map can be retrieved', function() {
     var docxPath = path.join(__dirname, "test-data/single-paragraph.docx");
-    return promises.nfcall(fs.readFile, docxPath)
+    return fs.readFile(docxPath)
         .then(function(buffer) {
             return mammoth.embedStyleMap({buffer: buffer}, "p => h1");
         })
@@ -309,20 +309,29 @@ test('src of inline images can be changed using readAsBuffer()', function() {
     });
 });
 
-test('images stored outside of document are included in output', function() {
+test('when external file access is enabled then images stored outside of document are included in output', function() {
     var docxPath = path.join(__dirname, "test-data/external-picture.docx");
-    return mammoth.convertToHtml({path: docxPath}).then(function(result) {
+    return mammoth.convertToHtml({path: docxPath}, {externalFileAccess: true}).then(function(result) {
         assert.equal(result.value, '<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAAXNSR0IArs4c6QAAAAlwSFlzAAAOvgAADr4B6kKxwAAAABNJREFUKFNj/M+ADzDhlWUYqdIAQSwBE8U+X40AAAAASUVORK5CYII=" /></p>');
         assert.deepEqual(result.messages, []);
     });
 });
 
-test('error if images stored outside of document are specified when passing file without path', function() {
+test('when external file access is enabled then error if images stored outside of document are specified when passing file without path', function() {
     var docxPath = path.join(__dirname, "test-data/external-picture.docx");
     var buffer = fs.readFileSync(docxPath);
-    return mammoth.convertToHtml({buffer: buffer}).then(function(result) {
+    return mammoth.convertToHtml({buffer: buffer}, {externalFileAccess: true}).then(function(result) {
         assert.equal(result.value, '');
         assert.equal(result.messages[0].message, "could not find external image 'tiny-picture.png', path of input document is unknown");
+        assert.equal(result.messages[0].type, "error");
+    });
+});
+
+test('given external file access is disabled by default then error if images stored outside of document are specified', function() {
+    var docxPath = path.join(__dirname, "test-data/external-picture.docx");
+    return mammoth.convertToHtml({path: docxPath}).then(function(result) {
+        assert.equal(result.value, '');
+        assert.equal(result.messages[0].message, "could not read external image 'tiny-picture.png', external file access is disabled");
         assert.equal(result.messages[0].type, "error");
     });
 });
@@ -331,6 +340,34 @@ test('simple list is converted to list elements', function() {
     var docxPath = path.join(__dirname, "test-data/simple-list.docx");
     return mammoth.convertToHtml({path: docxPath}).then(function(result) {
         assert.equal(result.value, '<ul><li>Apple</li><li>Banana</li></ul>');
+    });
+});
+
+test('headers and footers are read into the document but not converted to html', function() {
+    var docxPath = path.join(__dirname, "test-data/headers-footers.docx");
+    var document;
+    var options = {
+        transformDocument: function(element) {
+            document = element;
+            return element;
+        }
+    };
+    return mammoth.convertToHtml({path: docxPath}, options).then(function(result) {
+        assert.equal(document.headers.length, 1);
+        assert.equal(document.headers[0].type, "header");
+        assert.equal(convertElementToRawText(document.headers[0]), "Test Header Content\n\n");
+        assert.equal(document.footers.length, 1);
+        assert.equal(convertElementToRawText(document.footers[0]), "Test Footer Content\n\n");
+        assert.equal(result.value.indexOf("Test Header Content"), -1);
+    });
+});
+
+test('style and numbering definitions are returned alongside the html', function() {
+    var docxPath = path.join(__dirname, "test-data/simple-list.docx");
+    return mammoth.convertToHtml({path: docxPath}).then(function(result) {
+        assert.equal(result.value, '<ul><li>Apple</li><li>Banana</li></ul>');
+        assert.equal(result.customStyles.ListParagraph.name, "List Paragraph");
+        assert.equal(result.numberingStyles[Object.keys(result.numberingStyles)[0]].levels["0"].isOrdered, false);
     });
 });
 
@@ -486,7 +523,7 @@ test('extractRawText only retains raw text', function() {
 
 test('extractRawText can use .docx files represented by a Buffer', function() {
     var docxPath = path.join(__dirname, "test-data/single-paragraph.docx");
-    return promises.nfcall(fs.readFile, docxPath)
+    return fs.readFile(docxPath)
         .then(function(buffer) {
             return mammoth.extractRawText({buffer: buffer});
         })
@@ -511,4 +548,39 @@ test('should throw error if file is not a valid docx document', function() {
     }, function(error) {
         assert.equal(error.message, "Could not find main document part. Are you sure this is a valid .docx file?");
     });
+});
+
+test("Promise.done() is available", {
+    "on convertToHtml()": function() {
+        var docxPath = path.join(__dirname, "test-data/single-paragraph.docx");
+        return mammoth.convertToHtml({path: docxPath}).done();
+    },
+
+    "on convertToMarkdown()": function() {
+        var docxPath = path.join(__dirname, "test-data/single-paragraph.docx");
+        return mammoth.convertToMarkdown({path: docxPath}).done();
+    },
+
+    "on extractRawText()": function() {
+        var docxPath = path.join(__dirname, "test-data/single-paragraph.docx");
+        return mammoth.extractRawText({path: docxPath}).done();
+    },
+
+    "on embedStyleMap()": function() {
+        var docxPath = path.join(__dirname, "test-data/single-paragraph.docx");
+        return fs.readFile(docxPath).then(function(buffer) {
+            return mammoth.embedStyleMap({buffer: buffer}, "p => h1").done();
+        });
+    },
+
+    "on readEmbeddedStyleMap()": function() {
+        var docxPath = path.join(__dirname, "test-data/single-paragraph.docx");
+        return fs.readFile(docxPath)
+            .then(function(buffer) {
+                return mammoth.embedStyleMap({buffer: buffer}, "p => h1");
+            })
+            .then(function(docx) {
+                return mammoth.readEmbeddedStyleMap({buffer: docx.toBuffer()}).done();
+            });
+    }
 });

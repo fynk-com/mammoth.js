@@ -31,6 +31,20 @@ test('should convert document containing one paragraph to single p element', fun
     });
 });
 
+test('inserted content is kept and deleted content is dropped', function() {
+    var document = new documents.Document([
+        new documents.Paragraph([
+            runOfText("Kept "),
+            new documents.Run([new documents.Ins([runOfText("inserted")])]),
+            new documents.Run([new documents.Del([runOfText("deleted")])])
+        ])
+    ]);
+    var converter = new DocumentConverter();
+    return converter.convertToHtml(document).then(function(result) {
+        assert.equal(result.value, "<p>Kept inserted</p>");
+    });
+});
+
 test('ignores empty paragraphs', function() {
     var document = new documents.Document([
         paragraphOfText("")
@@ -785,7 +799,7 @@ test('images are written with data URIs', function() {
     var imageBuffer = new Buffer("Not an image at all!");
     var image = new documents.Image({
         readImage: function(encoding) {
-            return promises.when(imageBuffer.toString(encoding));
+            return promises.resolve(imageBuffer.toString(encoding));
         },
         contentType: "image/png"
     });
@@ -799,7 +813,7 @@ test('images have alt attribute if available', function() {
     var imageBuffer = new Buffer("Not an image at all!");
     var image = new documents.Image({
         readImage: function() {
-            return promises.when(imageBuffer);
+            return promises.resolve(imageBuffer);
         },
         altText: "It's a hat"
     });
@@ -817,7 +831,7 @@ test('can add custom handler for images', function() {
     var imageBuffer = new Buffer("Not an image at all!");
     var image = new documents.Image({
         readImage: function(encoding) {
-            return promises.when(imageBuffer.toString(encoding));
+            return promises.resolve(imageBuffer.toString(encoding));
         },
         contentType: "image/png"
     });
@@ -837,7 +851,7 @@ test('when custom image handler throws error then error is stored in error messa
     var error = new Error("Failed to convert image");
     var image = new documents.Image({
         readImage: function(encoding) {
-            return promises.when(new Buffer().toString(encoding));
+            return promises.resolve(new Buffer().toString(encoding));
         },
         contentType: "image/png"
     });

@@ -81,6 +81,10 @@ The output is an HTML fragment, rather than a full HTML document, encoded with U
 Since the encoding is not explicitly set in the fragment,
 opening the output file in a web browser may cause Unicode characters to be rendered incorrectly if the browser doesn't default to UTF-8.
 
+**Mammoth performs no sanitisation of the source document,
+and should therefore be used extremely carefully with untrusted user input.**
+See the [Security](#security) section for more information.
+
 #### Images
 
 By default, images are included inline in the output HTML.
@@ -138,6 +142,10 @@ If no module system is found,
 `mammoth` is set as a window global.
 
 The file can be generated using `make setup` during development.
+
+**Mammoth performs no sanitisation of the source document,
+and should therefore be used extremely carefully with untrusted user input.**
+See the [Security](#security) section for more information.
 
 #### Basic conversion
 
@@ -368,6 +376,11 @@ Converts the source document to HTML.
      To stop using the default style map altogether,
      set `options.includeDefaultStyleMap` to `false`.
 
+  * `externalFileAccess`: Source documents may reference files outside of the source document.
+    Access to any such external files is disabled by default.
+    To enable access when converting trusted source documents,
+    set `options.externalFileAccess` to `true`.
+
   * `convertImage`: by default, images are converted to `<img>` elements with the source included inline in the `src` attribute.
     Set this option to an [image converter](#image-converters) to override the default behaviour.
 
@@ -509,6 +522,35 @@ mammoth.images.imgElement(function(image) {
 ```
 
 `mammoth.images.dataUri` is the default image converter.
+
+### Security
+
+Mammoth performs no sanitisation of the source document,
+and should therefore be used extremely carefully with untrusted user input.
+For instance:
+
+* Source documents can contain links with `javascript:` targets.
+  If, for instance, you allow users to upload source documents,
+  automatically convert the document into HTML,
+  and embed the HTML into your website without sanitisation,
+  this may create links that can execute arbitrary JavaScript when clicked.
+
+* Source documents may reference files outside of the source document.
+  If, for instance, you allow users to upload source documents to a server,
+  automatically convert the document into HTML on the server,
+  and embed the HTML into your website,
+  this may allow arbitrary files on the server to be read and exfiltrated.
+
+  To avoid this issue, access to any such external files is disabled by default.
+  To enable access when converting trusted source documents,
+  set `options.externalFileAccess` to `true`.
+
+* The conversion may exhibit pathological performance on certain documents:
+  it's likely possible to craft a source document that causes high CPU or memory usage.
+  Depending on the performance constraints of your application and the likelihood of receiving untrusted input,
+  you may wish to consider isolating any calls to Mammoth,
+  such as running Mammoth in a separate thread with a timeout,
+  to prevent denial-of-service attacks.
 
 ### Document transforms
 
@@ -894,6 +936,12 @@ You can nest elements to any depth.
 
 ## Upgrading to later versions
 
+### 1.13.0
+
+The use of bluebird promises has been replaced with native promises. Any callers
+that rely on bluebird promises can convert the returned promise into a bluebird
+promise using `bluebird.Promise.resolve()`.
+
 ### 1.0.0
 
 The `convertUnderline` option is no longer supported.
@@ -966,10 +1014,3 @@ Thanks to the following people for their contributions to Mammoth:
 * [Jacob Wang](https://github.com/jaceyshome)
 
   * Supporting styles defined without names
-
-## Donations
-
-If you'd like to say thanks, feel free to [make a donation through Ko-fi](https://ko-fi.com/S6S01MG20).
-
-If you use Mammoth as part of your business,
-please consider supporting the ongoing maintenance of Mammoth by [making a weekly donation through Liberapay](https://liberapay.com/mwilliamson/donate).

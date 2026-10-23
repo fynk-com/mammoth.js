@@ -46,8 +46,9 @@ test('when optional attributes of comment are blank then they are read as null',
 
 test('when optional attributes of comment are not blank then they are read', function() {
     var comment = readComment(xml.element("w:comments", {}, [
-        xml.element("w:comment", {"w:id": "1", "w:author": "The Piemaker", "w:initials": "TP"})
+        xml.element("w:comment", {"w:id": "1", "w:author": "The Piemaker", "w:initials": "TP", "w:date": "2016-07-03T15:10:00Z"})
     ]));
     assert.strictEqual(comment.authorName, "The Piemaker");
     assert.strictEqual(comment.authorInitials, "TP");
+    assert.strictEqual(comment.date, "2016-07-03T15:10:00Z");
 });
